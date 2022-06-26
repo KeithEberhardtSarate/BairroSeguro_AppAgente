@@ -19,6 +19,16 @@ class _EntrarState extends State<Entrar> {
   var _editedLogin = Login(nomeUsuario: '', senha: '');
   var _isLoading = false;
 
+  void selectPage(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) {
+          return NovaConta();
+        },
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _formFocusNode.dispose();

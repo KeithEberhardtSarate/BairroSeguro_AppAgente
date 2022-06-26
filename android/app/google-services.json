@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "255573824940",
+    "project_id": "bairrro-seguro",
+    "storage_bucket": "bairrro-seguro.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:255573824940:android:66b5cfb92c6afb1e09d609",
+        "android_client_info": {
+          "package_name": "com.example.bairroseguro_agente"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "255573824940-8ccprrm5docu00ra72ggpvbeidm3dedd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9JbuvftszZFmcGQTp2RQkNs2yP7caReg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "255573824940-8ccprrm5docu00ra72ggpvbeidm3dedd.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

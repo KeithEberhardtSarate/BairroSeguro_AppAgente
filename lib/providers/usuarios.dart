@@ -10,6 +10,7 @@ import './solicitacao.dart';
 
 class Usuarios with ChangeNotifier {
   Usuario usuarioLogado = Usuario(
+      id: '',
       nome: '',
       email: '',
       telefone: '',
@@ -72,13 +73,13 @@ class Usuarios with ChangeNotifier {
 
       usuarioLogado.nome = data['nome'].toString();
       usuarioLogado.idConta = data['idConta'].toString();
+      usuarioLogado.id = data['_id'].toString();
       return {
         'isAutenticated': data['isAutenticated'].toString(),
-        'isContaAtiva': data['isContaAtiva'].toString(),
         'nome': data['nome'].toString(),
         'email': data['email'].toString(),
         'telefone': data['telefone'].toString(),
-        'idConta': data['idConta'].toString()
+        'id': data['_id'].toString(),
       };
     } catch (e) {
       print(e);
@@ -90,7 +91,7 @@ class Usuarios with ChangeNotifier {
     return usuarioLogado;
   }
 
-  Future<void> addSolicitacao(Solicitacao solicitacao) async {
+  Future<Map<dynamic, String>> addSolicitacao(Solicitacao solicitacao) async {
     try {
       final response = await http.post(
           Uri.parse('https://bairroseguro.herokuapp.com/solicitacao'),
@@ -103,6 +104,9 @@ class Usuarios with ChangeNotifier {
           }));
 
       notifyListeners();
+
+      final data = json.decode(response.body);
+      return {'_id': data['_id'].toString()};
     } catch (e) {
       print(e);
       throw e;

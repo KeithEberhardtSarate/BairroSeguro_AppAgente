@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:math';
 
+import 'package:bairroseguro_agente/notification_service.dart';
 import 'package:bairroseguro_agente/providers/solicitacao.dart';
 import 'package:bairroseguro_agente/providers/solicitacoes.dart';
 import 'package:bairroseguro_agente/providers/usuario.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -14,8 +17,20 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  dynamic _solicitacao = {
+    '_id': '',
+    'idAgente': '',
+    'tipo': '',
+    'idConta': '',
+    'status': '',
+  };
+  late DatabaseReference _solicitacoesRef;
+  late StreamSubscription<DatabaseEvent> _solicitacoesAddedSubscription;
+  late StreamSubscription<DatabaseEvent> _solicitacoesChangedSubscription;
+
   var _isLoading = false;
   var usuarioLogado = Usuario(
+      id: '',
       nome: '',
       email: '',
       telefone: '',
@@ -29,6 +44,95 @@ class _HomeState extends State<Home> {
       nomeUsuario: '',
       senha: '',
       idConta: '');
+
+  @override
+  void initState() {
+    super.initState();
+    init();
+  }
+
+  init() async {
+    _solicitacoesRef = FirebaseDatabase.instance.ref('solicitacoes');
+
+    // TO DO testar se o agente já está com escolta em andamento, se sim, preencher a solicitação com a escolta em andamento
+
+    // try {
+    //   final solicitacoesSnapshot =
+    //       await _solicitacoesRef.child(usuarioLogado.idConta).get();
+
+    //   if (solicitacoesSnapshot.exists) {
+    //     _solicitacao = solicitacoesSnapshot.value as dynamic;
+    //   }
+    // } catch (err) {
+    //   debugPrint(err.toString());
+    // }
+
+    _solicitacoesAddedSubscription =
+        _solicitacoesRef.onChildAdded.listen((DatabaseEvent event) {
+      setState(() {
+        if (event.snapshot.value != null &&
+            (event.snapshot.value as Map)['status'] == 'solicitada') {
+          // TO DO testar se o agente já está com escolta em andamento
+          _solicitacao['_id'] = (event.snapshot.value as Map)['_id'];
+          _solicitacao['idAgente'] = (event.snapshot.value as Map)['idAgente'];
+          _solicitacao['tipo'] = (event.snapshot.value as Map)['tipo'];
+          _solicitacao['idConta'] = (event.snapshot.value as Map)['idConta'];
+          _solicitacao['status'] = (event.snapshot.value as Map)['status'];
+
+          print(_solicitacao);
+
+          Provider.of<NotificationService>(context, listen: false)
+              .showNotification(CustomNotification(
+                  id: 1,
+                  title: 'Nova solicitação',
+                  body: 'escolta',
+                  payload: '/default'));
+        }
+      });
+    });
+
+    _solicitacoesChangedSubscription =
+        _solicitacoesRef.onChildChanged.listen((DatabaseEvent event) {
+      setState(() {
+        if (event.snapshot.value != null &&
+            (event.snapshot.value as Map)['status'] == 'solicitada') {
+          // TO DO testar se o agente já está com escolta em andamento
+          _solicitacao['_id'] = (event.snapshot.value as Map)['_id'];
+          _solicitacao['idAgente'] = (event.snapshot.value as Map)['idAgente'];
+          _solicitacao['tipo'] = (event.snapshot.value as Map)['tipo'];
+          _solicitacao['idConta'] = (event.snapshot.value as Map)['idConta'];
+          _solicitacao['status'] = (event.snapshot.value as Map)['status'];
+
+          print(_solicitacao);
+
+          Provider.of<NotificationService>(context, listen: false)
+              .showNotification(CustomNotification(
+                  id: 1,
+                  title: 'Nova solicitação',
+                  body: 'escolta',
+                  payload: '/default'));
+        }
+      });
+    });
+  }
+
+  solicitarEscolta(_id) async {
+    _solicitacoesRef =
+        FirebaseDatabase.instance.ref('solicitacoes/${usuarioLogado.idConta}');
+
+    _solicitacao['_id'] = _id;
+    _solicitacao['idConta'] = usuarioLogado.idConta;
+    _solicitacao['tipo'] = 'escolta';
+    _solicitacao['status'] = 'solicitada';
+
+    await _solicitacoesRef.set(_solicitacao);
+  }
+
+  void dispose() {
+    _solicitacoesAddedSubscription.cancel();
+    _solicitacoesChangedSubscription.cancel();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
@@ -45,8 +149,11 @@ class _HomeState extends State<Home> {
       _isLoading = true;
     });
     try {
-      await Provider.of<Usuarios>(context, listen: false).addSolicitacao(
-          Solicitacao(idConta: usuarioLogado.idConta, tipo: "escolta"));
+      var novaEscolta = await Provider.of<Usuarios>(context, listen: false)
+          .addSolicitacao(
+              Solicitacao(idConta: usuarioLogado.idConta, tipo: "escolta"));
+
+      solicitarEscolta(novaEscolta['_id'].toString());
     } catch (e) {
       print(e);
       await showDialog(
@@ -84,6 +191,42 @@ class _HomeState extends State<Home> {
         );
       });
     }
+  }
+
+  _aceitaSolicitacao() async {
+    _solicitacoesRef = FirebaseDatabase.instance
+        .ref('solicitacoes/${_solicitacao['idConta']}');
+
+    await _solicitacoesRef
+        .update({"status": "aceita", "idAgente": usuarioLogado.id});
+
+    setState(() {
+      _solicitacao['status'] = 'aceita';
+      _solicitacao['idAgente'] = usuarioLogado.id;
+    });
+  }
+
+  _recusarSolicitacao() {
+    print('Implementar');
+  }
+
+  _finalizarSolicitacao() async {
+    _solicitacoesRef = FirebaseDatabase.instance
+        .ref('solicitacoes/${_solicitacao['idConta']}');
+
+    await _solicitacoesRef.update({"status": "finalizada"});
+
+    _clearSolicitacao();
+  }
+
+  _clearSolicitacao() {
+    setState(() {
+      _solicitacao['_id'] = '';
+      _solicitacao['idAgente'] = '';
+      _solicitacao['tipo'] = '';
+      _solicitacao['idConta'] = '';
+      _solicitacao['status'] = '';
+    });
   }
 
   @override
@@ -142,7 +285,76 @@ class _HomeState extends State<Home> {
             : Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: <Widget>[
-                  Text('Em desenvolvimento', style: TextStyle(fontSize: 20)),
+                  Container(
+                    child: _solicitacao != null &&
+                            _solicitacao['_id'] != '' &&
+                            _solicitacao['status'] == 'solicitada'
+                        ? Column(
+                            children: <Widget>[
+                              const Text('Nova solicitação de escolta',
+                                  style: TextStyle(fontSize: 20)),
+                              Container(
+                                margin: const EdgeInsets.only(
+                                    top: 20, left: 40, right: 40),
+                                width: double.infinity,
+                                color: Colors.black87,
+                                alignment: Alignment.center,
+                                child: ListTile(
+                                  title: const Center(
+                                    child: Text("Aceitar",
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold)),
+                                  ),
+                                  onTap: () => _aceitaSolicitacao(),
+                                ),
+                              ),
+                              Container(
+                                margin: const EdgeInsets.only(
+                                    top: 15, left: 40, right: 40),
+                                width: double.infinity,
+                                color: Colors.black87,
+                                alignment: Alignment.center,
+                                child: ListTile(
+                                  title: const Center(
+                                    child: Text("Recusar",
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold)),
+                                  ),
+                                  onTap: () => _recusarSolicitacao(),
+                                ),
+                              ),
+                            ],
+                          )
+                        : const Text(''),
+                  ),
+                  Column(children: [
+                    if (_solicitacao != null &&
+                        _solicitacao['status'] == 'aceita') ...[
+                      Container(
+                        margin: const EdgeInsets.only(top: 5),
+                        width: double.infinity,
+                        color: Colors.black87,
+                        alignment: Alignment.center,
+                        child: ListTile(
+                          title: Center(
+                              child: Column(
+                            children: [
+                              if (_solicitacao != null &&
+                                  _solicitacao['status'] == 'aceita') ...[
+                                const Text("Finalizar",
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold))
+                              ]
+                            ],
+                          )),
+                          onTap: () => _finalizarSolicitacao(),
+                        ),
+                      ),
+                    ]
+                  ]),
                 ],
               ),
       ),

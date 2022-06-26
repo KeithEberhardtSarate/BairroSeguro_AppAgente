@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 class Usuario with ChangeNotifier {
+  String id;
   String nome;
   String email;
   String telefone;
@@ -17,6 +18,7 @@ class Usuario with ChangeNotifier {
   String idConta;
 
   Usuario({
+    this.id = '',
     required this.nome,
     required this.email,
     required this.telefone,
@@ -29,7 +31,7 @@ class Usuario with ChangeNotifier {
     required this.uf,
     required this.nomeUsuario,
     required this.senha,
-    this.tipo = 'morador',
+    this.tipo = 'agente',
     required this.idConta,
   });
 }
