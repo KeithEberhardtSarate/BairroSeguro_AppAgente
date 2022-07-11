@@ -5,6 +5,7 @@ import 'package:bairroseguro_agente/notification_service.dart';
 import 'package:bairroseguro_agente/providers/solicitacao.dart';
 import 'package:bairroseguro_agente/providers/solicitacoes.dart';
 import 'package:bairroseguro_agente/providers/usuario.dart';
+import 'package:bairroseguro_agente/screens/map.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -23,6 +24,8 @@ class _HomeState extends State<Home> {
     'tipo': '',
     'idConta': '',
     'status': '',
+    'lat': '',
+    'lon': '',
   };
   late DatabaseReference _solicitacoesRef;
   late StreamSubscription<DatabaseEvent> _solicitacoesAddedSubscription;
@@ -53,7 +56,6 @@ class _HomeState extends State<Home> {
 
   init() async {
     _solicitacoesRef = FirebaseDatabase.instance.ref('solicitacoes');
-
     // TO DO testar se o agente já está com escolta em andamento, se sim, preencher a solicitação com a escolta em andamento
 
     // try {
@@ -78,6 +80,8 @@ class _HomeState extends State<Home> {
           _solicitacao['tipo'] = (event.snapshot.value as Map)['tipo'];
           _solicitacao['idConta'] = (event.snapshot.value as Map)['idConta'];
           _solicitacao['status'] = (event.snapshot.value as Map)['status'];
+          _solicitacao['lat'] = (event.snapshot.value as Map)['lat'];
+          _solicitacao['lon'] = (event.snapshot.value as Map)['lon'];
 
           print(_solicitacao);
 
@@ -102,6 +106,8 @@ class _HomeState extends State<Home> {
           _solicitacao['tipo'] = (event.snapshot.value as Map)['tipo'];
           _solicitacao['idConta'] = (event.snapshot.value as Map)['idConta'];
           _solicitacao['status'] = (event.snapshot.value as Map)['status'];
+          _solicitacao['lat'] = (event.snapshot.value as Map)['lat'];
+          _solicitacao['lon'] = (event.snapshot.value as Map)['lon'];
 
           print(_solicitacao);
 
@@ -114,18 +120,6 @@ class _HomeState extends State<Home> {
         }
       });
     });
-  }
-
-  solicitarEscolta(_id) async {
-    _solicitacoesRef =
-        FirebaseDatabase.instance.ref('solicitacoes/${usuarioLogado.idConta}');
-
-    _solicitacao['_id'] = _id;
-    _solicitacao['idConta'] = usuarioLogado.idConta;
-    _solicitacao['tipo'] = 'escolta';
-    _solicitacao['status'] = 'solicitada';
-
-    await _solicitacoesRef.set(_solicitacao);
   }
 
   void dispose() {
@@ -142,55 +136,6 @@ class _HomeState extends State<Home> {
     setState(() {
       usuarioLogado = usuarioLogadoProvided;
     });
-  }
-
-  Future<void> _novaEscolta() async {
-    setState(() {
-      _isLoading = true;
-    });
-    try {
-      var novaEscolta = await Provider.of<Usuarios>(context, listen: false)
-          .addSolicitacao(
-              Solicitacao(idConta: usuarioLogado.idConta, tipo: "escolta"));
-
-      solicitarEscolta(novaEscolta['_id'].toString());
-    } catch (e) {
-      print(e);
-      await showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text('Algum erro ocorreu ao ciar a solicitacao'),
-          content: Text('Tente novamente'),
-          actions: <Widget>[
-            FlatButton(
-              child: Text('Ok'),
-              onPressed: () {
-                Navigator.of(ctx).pop();
-              },
-            )
-          ],
-        ),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-        showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: Text('Escolta solicitada com sucesso'),
-            content: Text('Um agente está a caminho'),
-            actions: <Widget>[
-              FlatButton(
-                child: Text('Ok'),
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                },
-              )
-            ],
-          ),
-        );
-      });
-    }
   }
 
   _aceitaSolicitacao() async {
@@ -232,132 +177,141 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: Drawer(
-        child: Container(
-          color: Colors.white,
-          child: Column(
-            children: [
-              Container(
-                width: 100,
-                height: 100,
-                margin: const EdgeInsets.only(top: 50, bottom: 20),
-                child: Image.network(
-                    "https://icones.pro/wp-content/uploads/2021/02/icone-utilisateur-gris.png"),
-              ),
-              Text(
-                usuarioLogado.nome,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              ),
-              Container(
-                margin: const EdgeInsets.only(top: 30),
-                width: double.infinity,
-                color: Colors.grey[100],
-                child: ListTile(
-                  title: const Text("Configurações"),
-                  onTap: () => print('Implementar'),
+        drawer: Drawer(
+          child: Container(
+            color: Colors.white,
+            child: Column(
+              children: [
+                Container(
+                  width: 100,
+                  height: 100,
+                  margin: const EdgeInsets.only(top: 50, bottom: 20),
+                  child: Image.network(
+                      "https://icones.pro/wp-content/uploads/2021/02/icone-utilisateur-gris.png"),
                 ),
-              ),
-              Expanded(child: Container()),
-              Container(
-                margin: const EdgeInsets.only(top: 2),
-                padding: const EdgeInsets.all(20),
-                width: double.infinity,
-                color: Colors.black87,
-                alignment: Alignment.center,
-                child: const Text("Sair",
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold)),
-              )
-            ],
+                Text(
+                  usuarioLogado.nome,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                ),
+                Container(
+                  margin: const EdgeInsets.only(top: 30),
+                  width: double.infinity,
+                  color: Colors.grey[100],
+                  child: ListTile(
+                    title: const Text("Configurações"),
+                    onTap: () => print('Implementar'),
+                  ),
+                ),
+                Expanded(child: Container()),
+                Container(
+                  margin: const EdgeInsets.only(top: 2),
+                  padding: const EdgeInsets.all(20),
+                  width: double.infinity,
+                  color: Colors.black87,
+                  alignment: Alignment.center,
+                  child: const Text("Sair",
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold)),
+                )
+              ],
+            ),
           ),
         ),
-      ),
-      appBar: AppBar(
-        title: Text('Bairro seguro Agente'),
-      ),
-      body: Container(
-        width: double.infinity,
-        padding: EdgeInsets.all(10),
-        child: _isLoading
-            ? Center(
-                child: CircularProgressIndicator(),
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
-                  Container(
-                    child: _solicitacao != null &&
-                            _solicitacao['_id'] != '' &&
-                            _solicitacao['status'] == 'solicitada'
-                        ? Column(
-                            children: <Widget>[
-                              const Text('Nova solicitação de escolta',
-                                  style: TextStyle(fontSize: 20)),
-                              Container(
-                                margin: const EdgeInsets.only(
-                                    top: 20, left: 40, right: 40),
-                                width: double.infinity,
-                                color: Colors.black87,
-                                alignment: Alignment.center,
-                                child: ListTile(
-                                  title: const Center(
-                                    child: Text("Aceitar",
-                                        style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold)),
-                                  ),
-                                  onTap: () => _aceitaSolicitacao(),
-                                ),
-                              ),
-                              Container(
-                                margin: const EdgeInsets.only(
-                                    top: 15, left: 40, right: 40),
-                                width: double.infinity,
-                                color: Colors.black87,
-                                alignment: Alignment.center,
-                                child: ListTile(
-                                  title: const Center(
-                                    child: Text("Recusar",
-                                        style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold)),
-                                  ),
-                                  onTap: () => _recusarSolicitacao(),
-                                ),
-                              ),
-                            ],
-                          )
-                        : const Text(''),
-                  ),
-                  Column(children: [
-                    if (_solicitacao != null &&
-                        _solicitacao['status'] == 'aceita') ...[
+        appBar: AppBar(
+          title: Text('Bairro seguro Agente'),
+        ),
+        body: Stack(children: <Widget>[
+          new Container(
+            height: 1000, // This line solved the issue
+            child: MapScreen(), // Mapbox
+          ),
+          Container(
+            width: double.infinity,
+            child: _isLoading
+                ? Center(
+                    child: CircularProgressIndicator(),
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: <Widget>[
+                      Expanded(child: Container()),
                       Container(
-                        margin: const EdgeInsets.only(top: 5),
-                        width: double.infinity,
-                        color: Colors.black87,
-                        alignment: Alignment.center,
-                        child: ListTile(
-                          title: Center(
-                              child: Column(
-                            children: [
-                              if (_solicitacao != null &&
-                                  _solicitacao['status'] == 'aceita') ...[
-                                const Text("Finalizar",
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold))
-                              ]
-                            ],
-                          )),
-                          onTap: () => _finalizarSolicitacao(),
-                        ),
+                        child: _solicitacao != null &&
+                                _solicitacao['_id'] != '' &&
+                                _solicitacao['status'] == 'solicitada'
+                            ? Container(
+                                color: Colors.white,
+                                padding: const EdgeInsets.all(25),
+                                child: Column(
+                                  children: <Widget>[
+                                    const Text('Nova solicitação de escolta',
+                                        style: TextStyle(fontSize: 20)),
+                                    Container(
+                                      margin: const EdgeInsets.only(
+                                          top: 20, left: 40, right: 40),
+                                      width: double.infinity,
+                                      color: Colors.black87,
+                                      alignment: Alignment.center,
+                                      child: ListTile(
+                                        title: const Center(
+                                          child: Text("Aceitar",
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold)),
+                                        ),
+                                        onTap: () => _aceitaSolicitacao(),
+                                      ),
+                                    ),
+                                    Container(
+                                      margin: const EdgeInsets.only(
+                                          top: 15, left: 40, right: 40),
+                                      width: double.infinity,
+                                      color: Colors.black87,
+                                      alignment: Alignment.center,
+                                      child: ListTile(
+                                        title: const Center(
+                                          child: Text("Recusar",
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold)),
+                                        ),
+                                        onTap: () => _recusarSolicitacao(),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : const Text(''),
                       ),
-                    ]
-                  ]),
-                ],
-              ),
-      ),
-    );
+                      Column(children: [
+                        if (_solicitacao != null &&
+                            _solicitacao['status'] == 'aceita') ...[
+                          Container(
+                            margin: const EdgeInsets.only(top: 5),
+                            width: double.infinity,
+                            color: Colors.black87,
+                            alignment: Alignment.center,
+                            child: ListTile(
+                              title: Center(
+                                  child: Column(
+                                children: [
+                                  if (_solicitacao != null &&
+                                      _solicitacao['status'] == 'aceita') ...[
+                                    const Text("Finalizar",
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold))
+                                  ]
+                                ],
+                              )),
+                              onTap: () => _finalizarSolicitacao(),
+                            ),
+                          ),
+                        ]
+                      ]),
+                    ],
+                  ),
+          ),
+        ]));
   }
 }

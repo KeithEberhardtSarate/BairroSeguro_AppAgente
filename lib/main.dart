@@ -1,13 +1,12 @@
 import 'package:bairroseguro_agente/notification_service.dart';
 import 'package:bairroseguro_agente/routes.dart';
+import 'package:bairroseguro_agente/screens/entrar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
 import 'package:bairroseguro_agente/providers/usuarios.dart';
-
-import 'main_items.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,23 +54,6 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        padding: EdgeInsets.all(10),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            // ignore: prefer_const_constructors
-            Text(
-              'Bairro Seguro Agente',
-              style: TextStyle(fontSize: 25),
-            ),
-            Center(
-              child: MainItems(),
-            ),
-          ],
-        ),
-      ),
-    );
+    return Scaffold(body: Entrar());
   }
 }

@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/usuarios.dart';
-import 'conta_pendente.dart';
 import 'home.dart';
-
-import '../screens/nova_conta.dart';
 
 class Entrar extends StatefulWidget {
   @override
@@ -18,16 +15,6 @@ class _EntrarState extends State<Entrar> {
   final _form = GlobalKey<FormState>();
   var _editedLogin = Login(nomeUsuario: '', senha: '');
   var _isLoading = false;
-
-  void selectPage(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) {
-          return NovaConta();
-        },
-      ),
-    );
-  }
 
   @override
   void dispose() {
@@ -105,57 +92,65 @@ class _EntrarState extends State<Entrar> {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(15),
       child: _isLoading
           ? Center(
               child: CircularProgressIndicator(),
             )
-          : Padding(
-              padding: const EdgeInsets.all(6.0),
-              child: Form(
-                  key: _form,
-                  child: Column(
-                    children: <Widget>[
-                      TextFormField(
-                        decoration: InputDecoration(labelText: 'Email'),
-                        textInputAction: TextInputAction.next,
-                        onFieldSubmitted: (_) {
-                          FocusScope.of(context).requestFocus(_formFocusNode);
-                        },
-                        onSaved: (value) {
-                          _editedLogin = Login(
-                              nomeUsuario: value.toString(),
-                              senha: _editedLogin.senha);
-                        },
-                      ),
-                      TextFormField(
-                        decoration: InputDecoration(labelText: 'Senha'),
-                        textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) {
-                          _saveForm();
-                        },
-                        onSaved: (value) {
-                          _editedLogin = Login(
-                              nomeUsuario: _editedLogin.nomeUsuario,
-                              senha: value.toString());
-                        },
-                      ),
-                      Container(
-                        margin: const EdgeInsets.only(top: 15),
-                        width: double.infinity,
-                        color: Colors.black87,
-                        alignment: Alignment.center,
-                        child: ListTile(
-                          title: Center(
-                            child: const Text("Entrar",
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold)),
-                          ),
-                          onTap: () => _saveForm(),
+          : Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Text(
+                  'Bairro Seguro Agente',
+                  style: TextStyle(fontSize: 25),
+                ),
+                Form(
+                    key: _form,
+                    child: Column(
+                      children: <Widget>[
+                        TextFormField(
+                          decoration: InputDecoration(labelText: 'Email'),
+                          textInputAction: TextInputAction.next,
+                          onFieldSubmitted: (_) {
+                            FocusScope.of(context).requestFocus(_formFocusNode);
+                          },
+                          onSaved: (value) {
+                            _editedLogin = Login(
+                                nomeUsuario: value.toString(),
+                                senha: _editedLogin.senha);
+                          },
                         ),
-                      ),
-                    ],
-                  )),
+                        TextFormField(
+                          decoration: InputDecoration(labelText: 'Senha'),
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) {
+                            _saveForm();
+                          },
+                          onSaved: (value) {
+                            _editedLogin = Login(
+                                nomeUsuario: _editedLogin.nomeUsuario,
+                                senha: value.toString());
+                          },
+                        ),
+                        Container(
+                          margin: const EdgeInsets.only(top: 15),
+                          width: double.infinity,
+                          color: Colors.black87,
+                          alignment: Alignment.center,
+                          child: ListTile(
+                            title: Center(
+                              child: const Text("Entrar",
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold)),
+                            ),
+                            onTap: () => _saveForm(),
+                          ),
+                        ),
+                      ],
+                    )),
+              ],
             ),
     );
   }
