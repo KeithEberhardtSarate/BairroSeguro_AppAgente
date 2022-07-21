@@ -18,20 +18,24 @@ class _MapScreenState extends State<MapScreen> {
       CameraPosition(target: LatLng(37.773972, -122.431297), zoom: 11.5);
 
   late GoogleMapController _googleMapController;
+  Completer<GoogleMapController> _controller = Completer();
   late Marker? _origin;
   late Marker? _destionation;
   late DatabaseReference _solicitacoesRef;
   late StreamSubscription<DatabaseEvent> _solicitacoesChangedSubscription;
 
   static var location = new Location();
-  var minhaLocalizacao;
+  LatLng minhaLocalizacao = LatLng(37.773972, -122.431297);
 
   @override
   void initState() {
+    super.initState();
     _solicitacoesRef = FirebaseDatabase.instance.ref('solicitacoes');
 
+    _addMarkerOrigin(LatLng(37.773972, -122.431297));
+    _addMarkerDestination(LatLng(37.773972, -122.431297));
+
     _getLocation();
-    super.initState();
 
     _solicitacoesChangedSubscription =
         _solicitacoesRef.onChildChanged.listen((DatabaseEvent event) {
@@ -40,8 +44,11 @@ class _MapScreenState extends State<MapScreen> {
         double lat = double.parse((event.snapshot.value as Map)['lat']);
         double lon = double.parse((event.snapshot.value as Map)['lon']);
         _addMarkerDestination(LatLng(lat, lon));
-        CameraUpdate.newCameraPosition(
-            CameraPosition(target: LatLng(lat, lon)));
+      }
+
+      if (event.snapshot.value != null &&
+          (event.snapshot.value as Map)['status'] == 'finalizada') {
+        _getLocation();
       }
     });
   }
@@ -53,16 +60,17 @@ class _MapScreenState extends State<MapScreen> {
     _addMarkerOrigin(LatLng(pos.latitude!, pos.longitude!));
     _addMarkerDestination(LatLng(pos.latitude!, pos.longitude!));
     setState(() {
-      minhaLocalizacao = pos;
+      minhaLocalizacao = LatLng(pos.latitude!, pos.longitude!);
     });
 
-    CameraUpdate.newCameraPosition(CameraPosition(
-        target: LatLng(minhaLocalizacao.latitude, minhaLocalizacao.longitude)));
+    // CameraUpdate.newCameraPosition(CameraPosition(
+    //     target: LatLng(minhaLocalizacao.latitude, minhaLocalizacao.longitude),
+    //     zoom: 11.5));
   }
 
   @override
   void dispose() {
-    _googleMapController.dispose();
+    //_googleMapController.dispose();
     super.dispose();
   }
 
@@ -73,7 +81,9 @@ class _MapScreenState extends State<MapScreen> {
           myLocationButtonEnabled: false,
           zoomControlsEnabled: false,
           initialCameraPosition: _initialCameraPosition,
-          onMapCreated: (controller) => _googleMapController = controller,
+          onMapCreated: (GoogleMapController controller) {
+            _controller.complete(controller);
+          },
           markers: {
             if (_origin != null) _origin!,
             if (_destionation != null) _destionation!,
@@ -82,6 +92,11 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _addMarkerOrigin(LatLng pos) {
+    // CameraUpdate.newCameraPosition(CameraPosition(
+    //     target: LatLng(pos.latitude, pos.longitude), zoom: 11.5));
+
+    _goPosition(pos);
+
     setState(() {
       _origin = Marker(
         markerId: const MarkerId('origin'),
@@ -93,6 +108,10 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _addMarkerDestination(LatLng pos) {
+    // CameraUpdate.newCameraPosition(CameraPosition(
+    //     target: LatLng(pos.latitude, pos.longitude), zoom: 11.5));
+    _goPosition(pos);
+
     setState(() {
       _destionation = Marker(
         markerId: const MarkerId('destination'),
@@ -101,5 +120,13 @@ class _MapScreenState extends State<MapScreen> {
         position: pos,
       );
     });
+  }
+
+  void _goPosition(LatLng pos) async {
+    final CameraPosition position =
+        CameraPosition(target: LatLng(pos.latitude, pos.longitude), zoom: 16);
+
+    final GoogleMapController controller = await _controller.future;
+    controller.animateCamera(CameraUpdate.newCameraPosition(position));
   }
 }
